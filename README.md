@@ -13,3 +13,5 @@ to aid transparency on:
   - _Used for dashboard front-end generation_
 - pandas >= 1.4.2 
   - _Used to generate DataFrames for use in dashboards, for example PowerBI or Dash_
+- xmlschema >= 1.10.0
+  - _Used to validate the individual metadata records_

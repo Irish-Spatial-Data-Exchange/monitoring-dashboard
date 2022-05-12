@@ -2,7 +2,7 @@
 Displays a monitoring dashboard to display the status of the nodes in the Irish
 Spatial Data Exchange network.
 
-Dependencies are pandas and dash
+Dependencies are pandas, dash and xmlschema
 
 :author: Adam Leadbetter (@adamml)
 """
@@ -11,11 +11,14 @@ import concurrent.futures
 
 from dash import Dash, dash_table, html
 from datetime import datetime
+from itertools import repeat
+from lxml import etree as lET
 import pandas as pd
 import typing
 from urllib.error import URLError, HTTPError
 import urllib.request
 import xml.etree.ElementTree as ET
+import xmlschema
 
 #
 # List of URLs to ISDE nodes
@@ -29,6 +32,43 @@ isde_nodes: list = ["http://geonetwork.maynoothuniversity.ie:8080/geonetwork",
                     "http://www.isde.ie/geonetwork/srv/eng/catalog.search",
                     "http://metadata.biodiversityireland.ie/geonetwork",
                     "http://data.ahg.gov.ie/geonetwork"]
+
+isde_sitemap_url: str = "https://www.isde.ie/geonetwork/srv/api/portal.sitemap"
+
+xml_schema = xmlschema.XMLSchema(
+    'http://schemas.opengis.net/iso/19139/20060504/gmd/gmd.xsd')
+
+
+def fetch_schema():
+    pass
+
+
+def validate_isde_record(record_url: str,
+                         schema: xmlschema.XMLSchema) -> list:
+    """
+
+    :param record_url:
+    :type record_url: str
+    :return:
+    :rtype: list
+    """
+    try:
+        with urllib.request.urlopen(record_url) as resp:
+            record_et: ET.Element = ET.fromstring(resp.read().decode())
+        schema.validate(record_et)
+    except ET.ParseError:
+        return [record_url, None, None]
+    except HTTPError as ee:
+        print("Could not open for validating: {} Reason: {} ...".format(record_url, str(ee)))
+        return [None, None, None]
+    except URLError as ee:
+        print("Could not open for validating: {} Reason: {} ...".format(record_url, str(ee)))
+        return [None, None, None]
+    except xmlschema.validators.exceptions.XMLSchemaValidatorError as ee:
+        return [None, record_url, str(ee)]
+    except xmlschema.exceptions.XMLSchemaKeyError as ee:
+        return [None, record_url, str(ee)]
+    return [None, None, None]
 
 
 def get_number_of_records_from_csw(csw_base_url: str) -> typing.Union[int,
@@ -151,9 +191,9 @@ def get_node_health(node: str) -> list:
              code of the server being called; the second element is the number
              of MD_Metadata records contained on that server; the third element
              is the most recent metadata created data for the endpoint; the
-             fourth element is the most recent modified date for the MD_Metadata
-             records at the endpoint. All elements are normally of type int,
-             but may be None if an error has occurred
+             fourth element is the most recent modified date for the
+             MD_Metadata records at the endpoint. All elements are normally of
+             type int, but may be None if an error has occurred
     :rtype: list
     """
     this_node_record_count: int
@@ -230,8 +270,8 @@ def get_node_health(node: str) -> list:
 response_codes: list = []
 node_record_count: list = []
 last_modified: list = []
-with concurrent.futures.ThreadPoolExecutor(max_workers=8) as exec:
-    res = exec.map(get_node_health, isde_nodes)
+with concurrent.futures.ThreadPoolExecutor(max_workers=16) as exc:
+    res = exc.map(get_node_health, isde_nodes)
 for r in res:
     response_codes.append(r[0])
     node_record_count.append(r[1])
@@ -269,6 +309,35 @@ node_health: pd.DataFrame = pd.DataFrame(list(zip(isde_nodes,
                                                   "Last Modified"])
 
 
+#
+# Check the XML structure for each record at the ISDE central node
+#
+
+bad_xml: list = []
+invalid_xml: list = []
+invalid_reason: list = []
+
+with urllib.request.urlopen(isde_sitemap_url) as resp:
+    isde_sitemap: ET.Element = ET.fromstring(resp.read().decode())
+isde_urls = ["{}/formatters/xml".format(
+    url[0].text.replace(".ie:/", ".ie/")).replace("http://", "https://www.") for url in isde_sitemap]
+
+with concurrent.futures.ThreadPoolExecutor(max_workers=4) as exc:
+    res = exc.map(validate_isde_record, isde_urls, repeat(xml_schema))
+for r in res:
+    if r[0]:
+        bad_xml.append(r[0])
+    if r[1]:
+        invalid_xml.append(r[1])
+        invalid_reason.append(r[2])
+
+bad_xml_df: pd.DataFrame = pd.DataFrame(bad_xml, columns=["URL"])
+
+invalid_xml_df: pd.DataFrame = pd.DataFrame(list(zip(invalid_xml,
+                                                     invalid_reason)),
+                                            columns=["URL",
+                                                     "Reason"])
+
 app: Dash = Dash(__name__)
 app.layout = html.Div(
     children=[html.H1("Irish Spatial Data Exchange Network Monitoring"),
@@ -294,7 +363,20 @@ app.layout = html.Div(
                                            },
                                            'backgroundColor': '#FF4136',
                                            'color': 'white'
-                                       }])])
+                                       }]),
+              html.H2("Malformed XML records"),
+              dash_table.DataTable(bad_xml_df.to_dict("records"),
+                                   [{"name": "Record URL",
+                                     "id": "URL",
+                                     "type": "text"}]),
+              html.H2("Invalid Metadata Records"),
+              dash_table.DataTable(invalid_xml_df.to_dict("records"),
+                                   [{"name": "Record URL",
+                                     "id": "URL",
+                                     "type": "text"},
+                                    {"name": "Reason Invalid",
+                                     "id": "Reason",
+                                     "type": "text"}])])
 
 if __name__ == '__main__':
     app.run_server(debug=True)
