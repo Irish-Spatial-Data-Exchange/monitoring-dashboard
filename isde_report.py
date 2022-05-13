@@ -338,6 +338,8 @@ if not malformed_records_md_list:
 
 out_str = """# ISDE Network Monitoring Report - {}
 
+[![rebuild report](https://github.com/Irish-Spatial-Data-Exchange/monitoring-dashboard/actions/workflows/rebuild_report.yml/badge.svg)](https://github.com/Irish-Spatial-Data-Exchange/monitoring-dashboard/actions/workflows/rebuild_report.yml)
+
 | Number of Nodes | Number of Nodes Up | Number of Nodes Down | Records Checked | Records Not Checked | Records with Malformed XML | Records with Invalid XML |
 |---|---|---|---|---|---|---|
 | {} | 🟢 {} | 🔴 {} | 🟢 {} | 🔴 {} | 🟠 {} | 🟠 {} |

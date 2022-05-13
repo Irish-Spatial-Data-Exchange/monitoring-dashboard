@@ -1,5 +1,7 @@
 # Irish Spatial Data Exchange Monitoring
 
+[![rebuild report](https://github.com/Irish-Spatial-Data-Exchange/monitoring-dashboard/actions/workflows/rebuild_report.yml/badge.svg)](https://github.com/Irish-Spatial-Data-Exchange/monitoring-dashboard/actions/workflows/rebuild_report.yml)
+
 A Python script a Markdown document reporting on:
 
 - The health of the Irish Spatial Data Exchange (ISDE) network
