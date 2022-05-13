@@ -292,10 +292,13 @@ node_health = list(zip(isde_nodes, response_codes,
                        node_up, node_up_int, node_record_count,
                        last_modified))
 
-node_health_table = ''.join(["\n| 🟢 | {} | {} | {} | {} |".format(x[0], x[1],
-                                                                  x[4], x[5])
-                            if x[2] else "\n| 🔴 | {} | {} | | |".format(
-                                x[0], x[1])
+node_health_table = ''.join(["\n| 🟢 | [{}]({}) | {} | {} | {} |".format(x[0],
+                                                                        x[0],
+                                                                        x[1],
+                                                                        x[4],
+                                                                        x[5])
+                            if x[2] else "\n| 🔴 | [{}]({}) | {} | | |".format(
+                                x[0], x[0], x[1])
                             for x in node_health])
 
 with concurrent.futures.ThreadPoolExecutor(max_workers=16) as exc:
@@ -315,16 +318,17 @@ for r in res:
     if r[0] == 1:
         records_checked += 1
         if r[1]:
-            malformed_records_md_list += "\n-{}".format(r[1])
+            malformed_records_md_list += "\n- [{}]({})".format(r[1], r[1])
             malformed_records += 1
         if r[2]:
             invalid_xml += 1
-            invalid_records_md_table += "\n| {} | {} |".format(r[2],
-                                                               r[3].replace(
+            invalid_records_md_table += "\n| [{}]({}) | {} |".format(r[2],
+                                                                     r[2],
+                                                                     r[3].replace(
                                                                    "\n", ""))
     elif r[0] == 0:
         records_not_checked += 1
-        records_not_checked_md_list += "\n- {}".format(r[2])
+        records_not_checked_md_list += "\n- [{}]({})".format(r[2], r[2])
 
 if not records_not_checked_md_list:
     records_not_checked_md_list = "\n- None"

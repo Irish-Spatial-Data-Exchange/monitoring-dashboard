@@ -10,3 +10,7 @@ A Python script a Markdown document reporting on:
 
 - xmlschema >= 1.10.0
   - _Used to validate the individual metadata records_
+
+## Report
+
+View the report [here](https://irish-spatial-data-exchange.github.io/monitoring-dashboard/report). 
