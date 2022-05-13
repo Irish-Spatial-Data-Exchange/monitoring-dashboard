@@ -2,7 +2,7 @@ name: rebuild report
 
 on:
   schedule:
-    - cron: '30 14 * * 1-5'
+    - cron: '55 14 * * 1-5'
 
 jobs:
   build:
@@ -36,4 +36,4 @@ jobs:
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: main
+          branch: master
