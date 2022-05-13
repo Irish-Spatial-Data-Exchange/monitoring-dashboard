@@ -30,6 +30,14 @@ isde_nodes: list = ["http://geonetwork.maynoothuniversity.ie:8080/geonetwork",
 """A list of the URLs of the nodes which make up the Irish Spatial Data
 Exchange network"""
 
+dataset_title: str = (
+            ".//{http://www.isotc211.org/2005/gmd}identificationInfo/" +
+            "{http://www.isotc211.org/2005/gmd}MD_DataIdentification/" +
+            "{http://www.isotc211.org/2005/gmd}citation/" +
+            "{http://www.isotc211.org/2005/gmd}CI_Citation/" +
+            "{http://www.isotc211.org/2005/gmd}title/" +
+            "{http://www.isotc211.org/2005/gco}CharacterString")
+"""XSPath query to get a dataset title from a ISO 19115 / 19139 record"""
 
 def parse_isde_sitemap():
     """Gets the full list of records from the ISDE sitemap
@@ -50,16 +58,22 @@ def validate_isde_record(record_url, schema):
     try:
         with urllib.request.urlopen(record_url) as record_response:
             record = ET.fromstring(record_response.read())
+        title: str = ""
+        e: typing.List[ET.Element] = record.findall(dataset_title)
+        for t in e:
+            title = str(t.text)
+        if title == "":
+            title = None
         schema.validate(record)
-        return[1, None, None, None]
+        return[1, None, None, None, title]
     except ET.ParseError:
-        return [1, record_url, None, None]
+        return [1, record_url, None, None, None]
     except urllib.error.URLError:
-        return [0, None, record_url, None]
+        return [0, None, record_url, None, None]
     except xmlschema.validators.exceptions.XMLSchemaValidatorError as ee:
-        return [1, None, record_url, str(ee)]
+        return [1, None, record_url, str(ee), title]
     except xmlschema.exceptions.XMLSchemaKeyError as ee:
-        return [1, None, record_url, str(ee)]
+        return [1, None, record_url, str(ee), title]
 
 
 def get_node_health(node: str) -> list:
@@ -322,10 +336,16 @@ for r in res:
             malformed_records += 1
         if r[2]:
             invalid_xml += 1
-            invalid_records_md_table += "\n| [{}]({}) | {} |".format(r[2],
-                                                                     r[2],
-                                                                     r[3].replace(
-                                                                   "\n", ""))
+            if not r[4]:
+                invalid_records_md_table += "\n| [{}]({}) | {} |".format(r[2],
+                                                                         r[2],
+                                                                         r[3].replace(
+                                                                         "\n", ""))
+            else:
+                invalid_records_md_table += "\n| [{}]({}) | {} |".format(r[4],
+                                                                         r[2],
+                                                                         r[3].replace(
+                                                                         "\n", ""))
     elif r[0] == 0:
         records_not_checked += 1
         records_not_checked_md_list += "\n- [{}]({})".format(r[2], r[2])
@@ -364,7 +384,7 @@ out_str = """# ISDE Network Monitoring Report - {}
 
 ## Invalid XML records
 
-| Record URL | Invalid Reason |
+| Record | Invalid Reason |
 |---|---|{}
 
 """.format(
