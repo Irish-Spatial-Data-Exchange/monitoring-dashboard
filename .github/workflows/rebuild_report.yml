@@ -2,7 +2,7 @@ name: rebuild report
 
 on:
   schedule:
-    - cron: '0 14 * * 1-5'
+    - cron: '30 14 * * 1-5'
 
 jobs:
   build:
@@ -33,7 +33,7 @@ jobs:
           git commit -m "Auto update report" -a
 
       - name: push changes
-        uses: ad-m/github-push-action@v.0.6.0
+        uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: main
