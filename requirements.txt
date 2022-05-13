@@ -1,3 +1,1 @@
-pandas>=1.4.2
-dash>=2.3.1
 xmlschema>=1.10.0
