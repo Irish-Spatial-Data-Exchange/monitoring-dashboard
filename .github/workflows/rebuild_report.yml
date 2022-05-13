@@ -2,7 +2,7 @@ name: rebuild report
 
 on:
   schedule:
-    - cron: '55 14 * * 1-5'
+    - cron: '30 6 * * 1-5'
 
 jobs:
   build:
