@@ -221,16 +221,29 @@ def get_most_recent_created_modified_from_csw(csw_base_url: str,
     :rtype: list
     """
     result = [None, None]
-    get_all_records_csw_get_str: str = \
-        "?SERVICE=CSW" + \
-        "&VERSION=2.0.2" + \
-        "&REQUEST=GetRecords" + \
-        "&RESULTTYPE=results" + \
-        "&OUTPUTFORMAT=application/xml" + \
-        "&CONSTRAINTLANGUAGE=FILTER" + \
-        "&TYPENAMES=gmd:MD_Metadata" + \
-        "&ELEMENTSETNAME=full" + \
-        "&MAXRECORDS={}".format(str(number_of_records + 1))
+    
+    try:
+        get_all_records_csw_get_str: str = \
+            "?SERVICE=CSW" + \
+            "&VERSION=2.0.2" + \
+            "&REQUEST=GetRecords" + \
+            "&RESULTTYPE=results" + \
+            "&OUTPUTFORMAT=application/xml" + \
+            "&CONSTRAINTLANGUAGE=FILTER" + \
+            "&TYPENAMES=gmd:MD_Metadata" + \
+            "&ELEMENTSETNAME=full" + \
+            "&MAXRECORDS={}".format(str(number_of_records + 1))
+    except TypeError:
+        get_all_records_csw_get_str: str = \
+            "?SERVICE=CSW" + \
+            "&VERSION=2.0.2" + \
+            "&REQUEST=GetRecords" + \
+            "&RESULTTYPE=results" + \
+            "&OUTPUTFORMAT=application/xml" + \
+            "&CONSTRAINTLANGUAGE=FILTER" + \
+            "&TYPENAMES=gmd:MD_Metadata" + \
+            "&ELEMENTSETNAME=full" + \
+            "&MAXRECORDS=1"
     try:
         child: ET.Element
         with urllib.request.urlopen("{}{}".format(csw_base_url,
