@@ -47,7 +47,8 @@ def parse_isde_sitemap():
     """
     with urllib.request.urlopen(
             "https://www.isde.ie/geonetwork/srv/" +
-            "api/portal.sitemap") as rss_response:
+            "api/sitemap") as rss_response:
+        print(rss_response)
         rss_tree = ET.fromstring(rss_response.read().decode("utf-8"))
         return ["{}/formatters/xml".format(
             url[0].text.replace(".ie:/", ".ie/").replace(
